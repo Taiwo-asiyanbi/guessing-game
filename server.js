@@ -5,6 +5,14 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
+const path = require("path");
+
+// Serve index.html from root
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+
 const io = new Server(server, {
   cors: {
     origin: "*",
