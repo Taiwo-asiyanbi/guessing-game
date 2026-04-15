@@ -5,7 +5,6 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Enable CORS so your client at 127.0.0.1:5500 can connect
 const io = new Server(server, {
   cors: {
     origin: "*",

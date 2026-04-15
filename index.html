@@ -57,7 +57,9 @@
   </div>
 
   <script>
-    const socket = io("http://localhost:5900");
+    // const socket = io("http://localhost:5900");
+    const socket = io("https://guessing-game.onrender.com");
+
 
     function log(msg, type="") {
       const div = document.getElementById("messages");
