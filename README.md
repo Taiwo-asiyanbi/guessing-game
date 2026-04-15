@@ -17,5 +17,6 @@ Players can join sessions, set questions, submit guesses, earn points, and rotat
 # 🛠️ Tech Stack
  **Backend**: Node.js, Express, Socket.IO
  **Frontend**: HTML, CSS, JavaScript
- **Hosting**: Vercel (frontend)
+ **Hosting**: Render (frontend)
+
 
