@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Guessing Game Client</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f6f8; }
+    h2 { color: #333; text-align: center; }
+    .container { display: flex; gap: 20px; }
+    .controls { flex: 1; }
+    .section { margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ccc; border-radius: 8px; }
+    .section h3 { margin-top: 0; color: #444; }
+    input { margin: 5px 0; padding: 8px; width: 90%; border: 1px solid #ccc; border-radius: 4px; }
+    button { margin: 5px 0; padding: 8px 12px; border: none; background: #0078d7; color: #fff; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #005fa3; }
+    #messages { flex: 2; border: 1px solid #ccc; background: #fff; padding: 15px; height: 400px; overflow-y: auto; border-radius: 8px; }
+    #players { margin-top: 10px; font-weight: bold; }
+    .log-entry { margin: 5px 0; }
+    .winner { color: green; font-weight: bold; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h2>🎮 Guessing Game</h2>
+  <div class="container">
+    <div class="controls">
+      <div class="section">
+        <h3>Session</h3>
+        <input id="name" placeholder="Your name" />
+        <button onclick="createSession()">Create Session</button>
+        <input id="sessionId" placeholder="Session ID" />
+        <button onclick="joinSession()">Join Session</button>
+      </div>
+
+      <div class="section">
+        <h3>Game Master</h3>
+        <input id="question" placeholder="Question" />
+        <input id="answer" placeholder="Answer" />
+        <button onclick="setQuestion()">Set Question</button>
+        <button onclick="startGame()">Start Game</button>
+      </div>
+
+      <div class="section">
+        <h3>Player</h3>
+        <input id="guess" placeholder="Your guess" />
+        <button onclick="submitGuess()">Submit Guess</button>
+      </div>
+
+      <div id="players" class="section">
+        <h3>Players</h3>
+        <p>No players yet...</p>
+      </div>
+    </div>
+
+    <div id="messages"></div>
+  </div>
+
+  <script>
+    const socket = io("http://localhost:5900");
+
+    function log(msg, type="") {
+      const div = document.getElementById("messages");
+      const entry = document.createElement("p");
+      entry.className = "log-entry " + type;
+      entry.innerHTML = msg;
+      div.appendChild(entry);
+      div.scrollTop = div.scrollHeight;
+    }
+
+    socket.on("sessionCreated", (data) => {
+      log(`Session created: <b>${data.sessionId}</b>, Master: ${data.master}`);
+      document.getElementById("sessionId").value = data.sessionId;
+    });
+
+    socket.on("playerJoined", (data) => {
+      document.getElementById("players").innerHTML =
+        "<h3>Players</h3><p>" + data.players.join("<br>") + "</p>";
+      log(`Players: ${data.players.join(", ")}`);
+    });
+
+    socket.on("questionSet", (data) => log(`Question set: ${data.question}`));
+    socket.on("gameStarted", (data) => log(`🚀 Game started! Question: ${data.question}`));
+    socket.on("wrongGuess", (data) => log(`❌ Wrong guess. Attempts left: ${data.attemptsLeft}`));
+    socket.on("winnerMsg", (msg) => log(`🏆 ${msg}`, "winner"));
+    socket.on("gameEnded", (data) => {
+      if (data.winner) {
+        log(`🏆 Winner: ${data.winner}, Answer: ${data.answer}`, "winner");
+      } else {
+        log(`⏰ Time expired. Answer was: ${data.answer}`);
+      }
+      log("📊 Scores:");
+      for (const [name, points] of Object.entries(data.scores)) {
+        log(`- ${name}: ${points} points`);
+      }
+    });
+    socket.on("newMaster", (data) => log(`👑 New Game Master: ${data.master}`));
+    socket.on("errorMsg", (msg) => log(`⚠️ Error: ${msg}`, "error"));
+
+    function createSession() {
+      const name = document.getElementById("name").value;
+      socket.emit("createSession", name);
+    }
+    function joinSession() {
+      const name = document.getElementById("name").value;
+      const sessionId = document.getElementById("sessionId").value;
+      socket.emit("joinSession", { sessionId, playerName: name });
+    }
+    function setQuestion() {
+      const sessionId = document.getElementById("sessionId").value;
+      const question = document.getElementById("question").value;
+      const answer = document.getElementById("answer").value;
+      socket.emit("setQuestion", { sessionId, question, answer });
+    }
+    function startGame() {
+      const sessionId = document.getElementById("sessionId").value;
+      socket.emit("startGame", sessionId);
+    }
+    function submitGuess() {
+      const sessionId = document.getElementById("sessionId").value;
+      const guess = document.getElementById("guess").value;
+      socket.emit("submitGuess", { sessionId, guess });
+    }
+  </script>
+</body>
+</html>
